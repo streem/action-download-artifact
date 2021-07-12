@@ -85,19 +85,26 @@ async function main() {
 
         console.log("==> RunID:", runID)
 
-        let artifacts = await client.actions.listWorkflowRunArtifacts({
-            owner: owner,
-            repo: repo,
-            run_id: runID,
-        })
+        let artifacts = [];
+        let totalArtifacts = Number.MAX_SAFE_INTEGER;
+        let pageNumber = 1;
+        while (artifacts.length < totalArtifacts) {
+            const { data: artifactsRequest } = await client.actions.listWorkflowRunArtifacts({
+                owner: owner,
+                repo: repo,
+                run_id: runID,
+                page: pageNumber,
+            });
+            totalArtifacts = artifactsRequest.total_count;
+            artifacts = artifacts.concat(artifactsRequest.artifacts);
+            pageNumber++;
+        }
 
         // One artifact or all if `name` input is not specified.
         if (name) {
-            artifacts = artifacts.data.artifacts.filter((artifact) => {
+            artifacts = artifacts.filter((artifact) => {
                 return artifact.name == name
             })
-        } else {
-            artifacts = artifacts.data.artifacts
         }
 
         if (artifacts.length == 0)
